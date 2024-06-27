@@ -19,7 +19,7 @@ INPUTS: standard CU TraIL data sheet as a .csv file with the addition of 4 colum
             # 2 = polished parallel to c-axis
 
 Note that importing the data file as something other than a .csv file (e.g., .xlsx) changes the data frame
-column names which are referenced throughout the script
+column names which are referenced throughout the script. A sample input file is included in the repository.
 
 OUTPUTS: default outputs are two .xlsx files:
     # 1. Full data sheet with all derived values and original measurements, analytical measurements 
