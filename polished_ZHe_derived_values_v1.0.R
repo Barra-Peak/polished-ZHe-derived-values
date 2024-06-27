@@ -301,8 +301,11 @@ for(i in 1:(as.numeric(nrow(he_data_rc)))){
 #### Calculate masses and parent isotope concentrations in ppm ----
 d <- 4.65*10^(-12) # density of zircon in gram/micrometer^3
 
-he_data_rc$Mass <- d*he_data_rc$Volume # calculate mass
+he_data_rc$Mass <- d*he_data_rc$Volume # calculate mass in g
 he_data_rc$Mass.unc <- d*he_data_rc$Volume.unc # calculate mass uncertainty
+he_data_rc$He.nmol.g <- (he_data$X4He..fmol...g./he_data_rc$Mass)*10^(-6) # calculate He in nmol/g # calculate 4He concentration
+he_data_rc$He.nmol.g.unc <- he_data_rc$He.nmol.g*sqrt((he_data_rc$X...h./he_data_rc$X4He..fmol...g.)^2 +
+                                                        (he_data_rc$Mass.unc/he_data_rc$Mass)^2) # calculate He uncertainty
 he_data_rc$U.ppm <- (he_data_rc$U..ng...i./1000)/he_data_rc$Mass # U concentration in ppm
 he_data_rc$U.ppm.unc <- he_data_rc$U.ppm*sqrt((he_data_rc$X...h..1/he_data_rc$U..ng...i.)^2 + 
                                                 (he_data_rc$Mass.unc/he_data_rc$Mass)^2)
