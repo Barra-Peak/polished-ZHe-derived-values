@@ -388,7 +388,7 @@ Rft.calc <- Rft.calc %>%
 
 # add columns to combined data frame
 he_data_rc$R.ft <- Rft.calc$R.ft
-he_data_rc$R.ft.unc <- 2*Rft.calc$R.ft.unc
+he_data_rc$R.ft.unc <- Rft.calc$R.ft.unc
 
 
 #### hecalc input table ----
