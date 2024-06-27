@@ -1,4 +1,4 @@
-#### Derived Intermediate (U-Th)/He values
+#### Derived Intermediate Zircon (U-Th)/He values for polished grains
 ## B. Peak June 27, 2024
 
 # PURPOSE: This R script calculates volume, surface area, and related values for Ft corrections and eU calculation for 
