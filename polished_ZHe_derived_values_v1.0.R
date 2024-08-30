@@ -230,8 +230,11 @@ for(i in 1:as.numeric(nrow(he_data))){
 #### Calculate uncertainties ----
 vu.e <- 0.21 # volume uncertainty percentage for ellipsoidal grains from Zeigler et al. 2024
 vu.o <- 0.13 # volume uncertainty percentage for tetragonal grains from Zeigler et al. 2024
+vu.c <- 0.21 # applied volume uncertainty percentage for cylindrical grains - the larger value from Zeigler et al. 2024. Cylindrical volume uncertainty currently unquantified.
+
 he_data$Vol.Ellipse.Unc <- vu.e*he_data$Vol.Ellipse # ellipsoid volume uncertainty
 he_data$Vol.Ortho.Unc <- vu.o*he_data$Vol.Ortho # tetragonal volume uncertainty
+he_data$Vol.Cyl.Unc <- vu.c*he_data$Vol.Cyl # cylindrical volume uncertainty
 
 # clean table of recalculated derived values
 he_data_rc <- he_data %>%
@@ -282,9 +285,7 @@ for(i in 1:(as.numeric(nrow(he_data_rc)))){
     he_data_rc$Ft.Sm147.unc[i] <- he_data_rc$Ft.Sm147[i]*0.01
   } else if(he_data_rc$Geom[i] == 2){ # cylindrical
     he_data_rc$Volume[i] <- he_data$Vol.Cyl[i]
-    he_data_rc$Volume.unc[i] <- (abs(he_data$Vol.Ellipse[i]-he_data$Vol.Cyl[i]) + abs(he_data$Vol.Ortho[i] - he_data$Vol.Cyl[i]))/2
-    S <- he_data$SA.Cyl[i]
-    S.unc <- (abs(he_data$SA.Ellipse[i]-he_data$SA.Cyl[i]) + abs(he_data$SA.Ortho[i] - he_data$SA.Cyl[i]))/2
+    he_data_rc$Volume.unc[i] <- he_data$Vol.Cyl.Unc[i]
     he_data_rc$Rsv[i] <- he_data$Rsv.Cyl[i]
     he_data_rc$Rsv.unc[i] <- 3*he_data_rc$Volume.unc[i]/he_data$SA.Cyl[i]
     he_data_rc$Ft.U238[i] <- he_data$Ft_238U.c[i]
@@ -358,7 +359,7 @@ Ft.c.calc <- Ft.c.calc %>%
 
 # add columns to combined data frame
 he_data_rc$Ft.c <- Ft.c.calc$Ft.c
-he_data_rc$Ft.c.unc.2s <- 2*Ft.c.calc$Ft.c.unc.1s
+he_data_rc$Ft.c.unc.1s <- Ft.c.calc$Ft.c.unc.1s
 
 #### Calculate RFT and uncertainty ----
 Rft.calc <- data.frame(Run = he_data_rc$Run, 
