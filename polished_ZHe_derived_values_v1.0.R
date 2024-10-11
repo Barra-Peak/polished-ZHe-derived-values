@@ -40,7 +40,7 @@ library(tidyverse) # for manipulating datatables
 #### Import data and set as numeric values ----
 setwd("~/Desktop") # set working directory. This is where output files will be saved
 he_data <- read.csv(
-  "/Users/barrapeak/Dropbox/Thermo-Detrital/Data/Jacobsville_all_He_06_10_24.csv") # load He data
+  "/Users/barrapeak/Dropbox/Code/Github/polished-ZHe-derived-values/example_input_file.csv") # load He data
 # he_data <- read.csv(file.choose()) # popup file picker use in published version
 he_data$length.1..µm...c. <- as.numeric(he_data$length.1..µm...c.) 
 he_data$width.1..µm...d. <- as.numeric(he_data$width.1..µm...d.) 
