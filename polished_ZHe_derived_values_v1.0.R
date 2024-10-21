@@ -1,5 +1,5 @@
 #### Derived Intermediate Zircon (U-Th)/He values for polished grains
-## B. Peak June 27, 2024
+## B. Peak October 21, 2024
 
 # PURPOSE: This R script calculates volume, surface area, and related values for Ft corrections and eU calculation for 
   # polished partial zircon grains using standard 2D grain measurements.
@@ -7,20 +7,24 @@
 # Ft equations from Cooperdock et al. (2019)
 # Volume, Rft, and Ft uncertainties applied following recommendations in Zeigler et al. (2024) where applicable
 
-# INPUTS: standard CU TraIL data sheet as a .csv file with the addition of 4 columns labeled as follows:
-  # Run: index for corresponding in-situ U-Pb data collection if applicable, if NA, fill with numeric 1
-  # Grind.Depth: the depth removed from the grains by polishing, can be estimated with glass beads or other
+# INPUTS: standard CU TraIL data sheet as an .xlsx file with the addition of 7 columns labeled as follows:
+  # Laser Session: index for corresponding in-situ U-Pb data collection if applicable, if NA, fill with numeric 1
+  # Grind Depth: the depth removed from the grains by polishing, can be estimated with glass beads or other
     # object of known size polished alongside the grains
-  # Geom: numeric grain geometry index:
+  # Geometry: numeric grain geometry index:
             # 1 = ellipsoid
             # 2 = cylindrical
             # 3 = tetragonal/orthorhombic
             # 4 = hexagonal (unsupported)
-  # Grind.Orientation.to.C.axis: orientation of the grain polished surface relative to the crystal c-axis:
+  # Orientation: orientation of the grain polished surface relative to the crystal c-axis:
             # 1 = polished perpendicular to c-axis
             # 2 = polished parallel to c-axis
-# Note that importing the data file as something other than a .csv file (e.g., .xlsx) changes the data frame
-  # column names which are referenced throughout the script
+  # Length Polished Face: the long side of polished face of the grain. Only needed
+        # for ellipsoids polished less than halfway, enter 0 when not applicable.
+  # Width Polished Face: the short side of polished face of the grain. Only needed
+        # for ellipsoids polished less than halfway, enter 0 when not applicable.
+  # Crystal Fragment? : indicates if crystal measured grain is an interior fragment or not.
+# Note that these and other column names are referenced throughout the script and should not be changed
 
 # OUTPUTS: default outputs are two .xlsx files:
     # 1. Full data sheet with all derived values and original measurements, analytical measurements 
@@ -39,18 +43,22 @@ library(tidyverse) # for manipulating datatables
 
 #### Import data and set as numeric values ----
 setwd("~/Desktop") # set working directory. This is where output files will be saved
-he_data <- read.csv(
-  "/Users/barrapeak/Dropbox/Code/Github/polished-ZHe-derived-values/example_input_file.csv") # load He data
-# he_data <- read.csv(file.choose()) # popup file picker use in published version
-he_data$length.1..µm...c. <- as.numeric(he_data$length.1..µm...c.) 
-he_data$width.1..µm...d. <- as.numeric(he_data$width.1..µm...d.) 
-he_data$length.2..µm...c. <- as.numeric(he_data$length.2..µm...c.) 
-he_data$width.2..µm...d. <- as.numeric(he_data$width.2..µm...d.) 
+# he_data <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
+he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/Code/Github/polished-ZHe-derived-values/example_input_file.xlsx",
+                  startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
+# the next two lines clean the data table to remove the unit header and footnotes
+cut_index <- which(is.na(he_data_import$Grain), arr.ind = TRUE)
+he_data <- he_data_import[-cut_index, ]
+# the next line converts all values that should be numeric to numeric
+# suppressWarnings() supresses an NA message (NAs are from analyses with no Sm)
+suppressWarnings(he_data <- he_data %>%
+  mutate(across(-c("Grain", "Crystal_Fragment."), as.numeric)) %>%
+    mutate_at(c("X147Sm", "X._1σ.3"), ~replace(., is.na(.), 0)))
 
 #### Calculate volume, surface area, Rsv and FT values for all geometries ----
 
 # set up dataframe columns to store values
-he_data$Run <- as.factor(he_data$Run)
+he_data$Laser_Session <- as.factor(he_data$Laser_Session)
 he_data$Vol.Ellipse <- c(rep(0, nrow(he_data))) # ellipsoid volume
 he_data$Vol.Ortho <- c(rep(0, nrow(he_data))) # tetragonal volume
 he_data$Vol.Cyl <- c(rep(0, nrow(he_data))) # cylindrical volume
@@ -81,13 +89,13 @@ SD.Sm147 <- 4.76 # stopping distance for S147 from Cooperdock et al. 2019
 
 # Calculate values
 for(i in 1:as.numeric(nrow(he_data))){
-  g <- he_data$Grind.Depth[i] # depth of amount removed through polishing
-  Np <- he_data$Np..f.[i] # number of tetragonal terminations
-  if(he_data$Grind.Orientation.to.C.axis[i] == 1){ # polished perpendicular to c-axis
+  g <- he_data$Grind_Depth[i] # depth of amount removed through polishing
+  Np <- he_data$Np[i] # number of tetragonal terminations
+  if(he_data$Orientation[i] == 1){ # polished perpendicular to c-axis
     # Ellipsoid 
-    a.e <- (he_data$length.1..µm...c.[i] + he_data$width.2..µm...d.[i])/4
-    b.e <- he_data$width.1..µm...d.[i]/2
-    c.e <- he_data$length.2..µm...c.[i]
+    a.e <- (he_data$Length_1[i] + he_data$Width_2[i])/4
+    b.e <- he_data$Width_1[i]/2
+    c.e <- he_data$Length_2[i]
     
     he_data$Vol.Ellipse[i] <- (2/3)*pi*a.e*b.e*c.e
     he_data$SA.Ellipse[i] <- 2*pi*((a.e^p*b.e^p + b.e^p*c.e^p + c.e^p*a.e^p)/3)^(1/p)
@@ -102,8 +110,8 @@ for(i in 1:as.numeric(nrow(he_data))){
       ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Sm147/he_data$Rsv.Ellipse[i])^3 # 147Sm Ft value
     
     # Cylinder
-    h <- (he_data$length.2..µm...c.[i] + he_data$width.1..µm...d.[i])/2 # original height is average of 2 lengths + g
-    r <- (he_data$width.1..µm...d.[i] + he_data$width.2..µm...d.[i])/4 # radius is average of 2 widths divided by 2
+    h <- (he_data$Length_2[i] + he_data$Width_1[i])/2 # original height is average of 2 lengths + g
+    r <- (he_data$Width_1[i] + he_data$Width_2[i])/4 # radius is average of 2 widths divided by 2
     
     he_data$Vol.Cyl[i] <- pi*r^2*h
     he_data$SA.Cyl[i] <- (2*pi*r*h) + (pi*r^2) # one end is polished so don't count
@@ -114,9 +122,9 @@ for(i in 1:as.numeric(nrow(he_data))){
     he_data$Ft_147Sm.c[i] <- 1 - (1/2)*((r+h)*SD.Sm147/(r*h)) + 0.2122*(SD.Sm147^2)/(r*h) + 0.0153*(SD.Sm147^3/r^3) # 147Sm Ft value
     
     # Tetragonal
-    a.o <- min(he_data$width.1..µm...d.[i], he_data$width.2..µm...d.[i])
-    b.o <- max(he_data$width.1..µm...d.[i], he_data$width.2..µm...d.[i])
-    c.o <- (he_data$length.1..µm...c.[i] + he_data$length.2..µm...c.[i])/2
+    a.o <- min(he_data$Width_1[i], he_data$Width_2[i])
+    b.o <- max(he_data$Width_1[i], he_data$Width_2[i])
+    c.o <- (he_data$Length_1[i] + he_data$Length_2[i])/2
     
     he_data$Vol.Ortho[i] <- a.o*b.o*c.o - Np*(a.o/4)*(b.o^2 + (a.o^2)/3)
     he_data$SA.Ortho[i] <- 2*(a.o*b.o+b.o*c.o+a.o*c.o) - Np*((a.o^2-b.o^2)/2 + (2-sqrt(2))*a.o*b.o) - a.o*b.o # a*b is the area of the polished side
@@ -135,10 +143,11 @@ for(i in 1:as.numeric(nrow(he_data))){
          (a.o + b.o)*Np)*(SD.Sm147^2)/he_data$Vol.Ortho[i] # 147Sm Ft value
     
   } else { # polished parallel to c-axis
-    # Ellipsoid, grind more than halfway 
-    a.e <- he_data$width.2..µm...d.[i]
-    b.e <- he_data$width.1..µm...d.[i]/2
-    c.e <- (he_data$length.1..µm...c.[i] + he_data$length.2..µm...c.[i])/4
+    # Ellipsoid
+    if(g > (he_data$Width_2[i] + g)/2){ #ground more than halfway 
+    a.e <- he_data$Width_1[i]/2
+    b.e <- he_data$Width_2[i]
+    c.e <- (he_data$Length_1[i] + he_data$Length_2[i])/4
     he_data$Vol.Ellipse[i] <- (2/3)*pi*a.e*b.e*c.e
     he_data$SA.Ellipse[i] <-  2*pi*((a.e^p*b.e^p + a.e^p*c.e^p + b.e^p*c.e^p)/3)^(1/p)
     he_data$Rsv.Ellipse[i] <- 3*he_data$Vol.Ellipse[i]/he_data$SA.Ellipse[i] # ellipsoid equivalent spherical radius
@@ -150,12 +159,32 @@ for(i in 1:as.numeric(nrow(he_data))){
       ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Th232/he_data$Rsv.Ellipse[i])^3 # 232Th Ft value
     he_data$Ft_147Sm.e[i] <- 1 - (3/4)*(SD.Sm147/he_data$Rsv.Ellipse[i]) + 
       ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Sm147/he_data$Rsv.Ellipse[i])^3 # 147Sm Ft value
+    } else if(g < (he_data$Width_2[i] + g)/2){ # ground less than halfway
+      a.e <- he_data$Width_1[i]/2
+      b.e <- he_data$Width_2[i]
+      c.e <- (he_data$Length_1[i] + he_data$Length_2[i])/4
+      a.p <- he_data$Width_Polished_Face[i]/2
+      b.p <- g
+      c.p <- he_data$Length_Polished_Face[i]/2
+      he_data$Vol.Ellipse[i] <- (4/3)*pi*a.e*b.e*c.e - (2/3)*pi*a.p*b.p*c.p
+      he_data$SA.Ellipse[i] <-  4*pi*((a.e^p*b.e^p + a.e^p*c.e^p + b.e^p*c.e^p)/3)^(1/p) -
+        2*pi*((a.p^p*b.p^p + a.p^p*c.p^p + b.p^p*c.p^p)/3)^(1/p)
+      he_data$Rsv.Ellipse[i] <- 3*he_data$Vol.Ellipse[i]/he_data$SA.Ellipse[i] # ellipsoid equivalent spherical radius
+      he_data$Ft_238U.e[i] <- 1 - (3/4)*(SD.U238/he_data$Rsv.Ellipse[i]) + 
+        ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.U238/he_data$Rsv.Ellipse[i])^3 # 238U Ft value
+      he_data$Ft_235U.e[i] <- 1 - (3/4)*(SD.U235/he_data$Rsv.Ellipse[i]) + 
+        ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.U235/he_data$Rsv.Ellipse[i])^3 # 235U Ft value
+      he_data$Ft_232Th.e[i] <- 1 - (3/4)*(SD.Th232/he_data$Rsv.Ellipse[i]) + 
+        ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Th232/he_data$Rsv.Ellipse[i])^3 # 232Th Ft value
+      he_data$Ft_147Sm.e[i] <- 1 - (3/4)*(SD.Sm147/he_data$Rsv.Ellipse[i]) + 
+        ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Sm147/he_data$Rsv.Ellipse[i])^3 # 147Sm Ft value
+    }
     
     # Cylinder
-    r_ideal <- ((min(he_data$width.1..µm...d.[i],he_data$width.2..µm...d.[i]) + g) + max(he_data$width.1..µm...d.[i],he_data$width.2..µm...d.[i]))/4
-    h <- (he_data$length.1..µm...c.[i] + he_data$length.2..µm...c.[i])/2
+    r_ideal <- ((min(he_data$Width_1[i],he_data$Width_2[i]) + g) + max(he_data$Width_1[i],he_data$Width_2[i]))/4
+    h <- (he_data$Length_1[i] + he_data$Length_2[i])/2
     if(r_ideal < g){ # ground more than halfway
-      r <- min(he_data$width.1..µm...d.[i], he_data$width.2..µm...d.[i])
+      r <- min(he_data$Width_1[i], he_data$Width_2[i])
       b <- sqrt(r_ideal^2-(r_ideal-r)^2)
       he_data$Vol.Cyl[i] <- h*(1/2)*pi*r*b
       he_data$SA.Cyl[i] <- pi*r*b + h*pi/2*(3*(r + b) - sqrt((3*r+b)*(r+3*b)))
@@ -177,9 +206,9 @@ for(i in 1:as.numeric(nrow(he_data))){
     }
     
     # Tetragonal
-    a.o <- min(he_data$width.1..µm...d.[i], he_data$width.2..µm...d.[i])
-    b.o <- max(he_data$width.1..µm...d.[i], he_data$width.2..µm...d.[i])
-    c.o <- (he_data$length.1..µm...c.[i] + he_data$length.2..µm...c.[i])/2
+    a.o <- min(he_data$Width_1[i], he_data$Width_2[i])
+    b.o <- max(he_data$Width_1[i], he_data$Width_2[i])
+    c.o <- (he_data$Length_1[i] + he_data$Length_2[i])/2
     a_1 <- a.o + g # original width pre-polishing
     if(a_1/2 < g){ # ground more than halfway
       he_data$Vol.Ortho[i] <- (2*a.o*b.o*c.o - Np*(2*a.o/4)*sqrt(b.o^2+((2*a.o)^2)/3))/2
@@ -238,8 +267,9 @@ he_data$Vol.Cyl.Unc <- vu.c*he_data$Vol.Cyl # cylindrical volume uncertainty
 
 # clean table of recalculated derived values
 he_data_rc <- he_data %>%
-  select(Run, Sample.Name.and.Aliquot, length.1..µm...c., width.1..µm...d., length.2..µm...c., width.2..µm...d., Grind.Depth, Geom, Np..f.,
-         X4He..fmol...g., X...h., U..ng...i., X...h..1, Th..ng...j., X...h..2, X147Sm..ng...k., X...h..3, Alpha.Ejection.Applied.)
+  select(Laser_Session, Grain, Length_1, Width_1, Length_2, Width_2, Geometry, Np,
+         Length_Polished_Face, Width_Polished_Face, Grind_Depth, Orientation, Crystal_Fragment.,
+         X4He, X._1σ, U, X._1σ.1, Th, X._1σ.2, X147Sm, X._1σ.3)
 
 # set up value columns
 he_data_rc$Volume <- c(rep(0, nrow(he_data))) # volume to use
@@ -257,7 +287,7 @@ he_data_rc$Ft.Sm147.unc <- c(rep(0, nrow(he_data))) # Sm147 Ft value uncertainty
 
 # assign values based on geometry
 for(i in 1:(as.numeric(nrow(he_data_rc)))){
-  if(he_data_rc$Geom[i] == 1){ # ellipsoid
+  if(he_data_rc$Geometry[i] == 1){ # ellipsoid
     he_data_rc$Volume[i] <- he_data$Vol.Ellipse[i]
     he_data_rc$Volume.unc[i] <- he_data$Vol.Ellipse.Unc[i]
     he_data_rc$Rsv[i] <- he_data$Rsv.Ellipse[i]
@@ -270,7 +300,7 @@ for(i in 1:(as.numeric(nrow(he_data_rc)))){
     he_data_rc$Ft.Th232.unc[i] <- he_data_rc$Ft.Th232[i]*0.04
     he_data_rc$Ft.Sm147[i] <- he_data$Ft_147Sm.e[i]
     he_data_rc$Ft.Sm147.unc[i] <- he_data_rc$Ft.Sm147[i]*0.01
-  } else if(he_data_rc$Geom[i] == 3){ # tetragonal
+  } else if(he_data_rc$Geometry[i] == 3){ # tetragonal
     he_data_rc$Volume[i] <- he_data$Vol.Ortho[i]
     he_data_rc$Volume.unc[i] <- he_data$Vol.Ortho.Unc[i]
     he_data_rc$Rsv[i] <- he_data$Rsv.Ortho[i]
@@ -283,7 +313,7 @@ for(i in 1:(as.numeric(nrow(he_data_rc)))){
     he_data_rc$Ft.Th232.unc[i] <- he_data_rc$Ft.Th232[i]*0.05
     he_data_rc$Ft.Sm147[i] <- he_data$Ft_147Sm.o[i]
     he_data_rc$Ft.Sm147.unc[i] <- he_data_rc$Ft.Sm147[i]*0.01
-  } else if(he_data_rc$Geom[i] == 2){ # cylindrical
+  } else if(he_data_rc$Geometry[i] == 2){ # cylindrical
     he_data_rc$Volume[i] <- he_data$Vol.Cyl[i]
     he_data_rc$Volume.unc[i] <- he_data$Vol.Cyl.Unc[i]
     he_data_rc$Rsv[i] <- he_data$Rsv.Cyl[i]
@@ -304,36 +334,33 @@ d <- 4.65*10^(-12) # density of zircon in gram/micrometer^3
 
 he_data_rc$Mass <- d*he_data_rc$Volume # calculate mass in g
 he_data_rc$Mass.unc <- d*he_data_rc$Volume.unc # calculate mass uncertainty
-he_data_rc$He.nmol.g <- (he_data$X4He..fmol...g./he_data_rc$Mass)*10^(-6) # calculate He in nmol/g # calculate 4He concentration
-he_data_rc$He.nmol.g.unc <- he_data_rc$He.nmol.g*sqrt((he_data_rc$X...h./he_data_rc$X4He..fmol...g.)^2 +
+he_data_rc$He.nmol.g <- (he_data$X4He/he_data_rc$Mass)*10^(-6) # calculate He in nmol/g # calculate 4He concentration
+he_data_rc$He.nmol.g.unc <- he_data_rc$He.nmol.g*sqrt((he_data_rc$X._1σ/he_data_rc$X4He)^2 +
                                                         (he_data_rc$Mass.unc/he_data_rc$Mass)^2) # calculate He uncertainty
-he_data_rc$U.ppm <- (he_data_rc$U..ng...i./1000)/he_data_rc$Mass # U concentration in ppm
-he_data_rc$U.ppm.unc <- he_data_rc$U.ppm*sqrt((he_data_rc$X...h..1/he_data_rc$U..ng...i.)^2 + 
+he_data_rc$U.ppm <- (he_data_rc$U/1000)/he_data_rc$Mass # U concentration in ppm
+he_data_rc$U.ppm.unc <- he_data_rc$U.ppm*sqrt((he_data_rc$X._1σ.1/he_data_rc$U)^2 + 
                                                 (he_data_rc$Mass.unc/he_data_rc$Mass)^2)
-he_data_rc$Th.ppm <- (he_data_rc$Th..ng...j./1000)/he_data_rc$Mass # Th concentration in ppm
-he_data_rc$Th.ppm.unc <- he_data_rc$Th.ppm*sqrt((he_data_rc$X...h..2/he_data_rc$Th..ng...j.)^2 + 
+he_data_rc$Th.ppm <- (he_data_rc$Th/1000)/he_data_rc$Mass # Th concentration in ppm
+he_data_rc$Th.ppm.unc <- he_data_rc$Th.ppm*sqrt((he_data_rc$X._1σ.2/he_data_rc$Th)^2 + 
                                                   (he_data_rc$Mass.unc/he_data_rc$Mass)^2)
-he_data_rc$Sm.ppm <- case_when(he_data_rc$X147Sm..ng...k. == "n.m." ~ 0, # Sm concentration in ppm (n.m. converted to zeros for ease of data manipulation)
-                               he_data_rc$X147Sm..ng...k. == "0" ~ 0,
-                               .default = (as.numeric(he_data_rc$X147Sm..ng...k.)/1000)/he_data_rc$Mass)
-he_data_rc$Sm.ppm.unc <- case_when(he_data_rc$X...h..3 == "n.m." ~ 0,
-                                   he_data_rc$X...h..3 == "0" ~ 0,
-                                   .default = as.numeric(he_data_rc$Sm.ppm)*
-                                     sqrt((as.numeric(he_data_rc$X...h..3)/as.numeric(he_data_rc$X147Sm..ng...k.))^2 + 
-                                            (he_data_rc$Mass.unc/he_data_rc$Mass)^2))
+he_data_rc$Sm.ppm <- (he_data_rc$X147Sm/1000)/he_data_rc$Mass # Sm concentration in ppm
+he_data_rc$Sm.ppm.unc <- case_when(he_data_rc$X147Sm != 0 ~
+  he_data_rc$X147Sm*sqrt((he_data_rc$X._1σ.3/he_data_rc$X147Sm)^2 + 
+                                                  (he_data_rc$Mass.unc/he_data_rc$Mass)^2),
+                         .default = 0)
 
 #### Calculate eU ----
 he_data_rc$eU.ppm <- he_data_rc$U.ppm + 0.238*he_data_rc$Th.ppm + 0.0083*he_data_rc$Sm.ppm
 he_data_rc$eU.ppm.unc <- sqrt(he_data_rc$U.ppm.unc^2 + (0.238)*he_data_rc$Th.ppm.unc^2 + (0.0083)*he_data_rc$Sm.ppm.unc^2)
 
 #### Calculate combined Ft and uncertainty ----
-Ft.c.calc <- data.frame(Run = he_data_rc$Run, 
-                        Sample = he_data_rc$Sample.Name.and.Aliquot, 
-                        U = he_data_rc$U..ng...i.,
-                        sUf = he_data_rc$X...h..1/he_data_rc$U..ng...i., # fractional uncertainty
-                        Th = he_data_rc$Th..ng...j.,
-                        sThf = he_data_rc$X...h..2/he_data_rc$Th..ng...j., # fractional uncertainty
-                        Th.U = he_data_rc$Th..ng...j./he_data_rc$U..ng...i.,
+Ft.c.calc <- data.frame(Run = he_data_rc$Laser_Session, 
+                        Sample = he_data_rc$Grain, 
+                        U = he_data_rc$U,
+                        sUf = he_data_rc$X._1σ.1/he_data_rc$U, # fractional uncertainty
+                        Th = he_data_rc$Th,
+                        sThf = he_data_rc$X._1σ.2/he_data_rc$Th, # fractional uncertainty
+                        Th.U = he_data_rc$Th/he_data_rc$U,
                         Ft.238 = he_data_rc$Ft.U238,
                         sFt238f = he_data_rc$Ft.U238.unc/he_data_rc$Ft.U238,
                         Ft.235 = he_data_rc$Ft.U235,
@@ -362,15 +389,15 @@ he_data_rc$Ft.c <- Ft.c.calc$Ft.c
 he_data_rc$Ft.c.unc.1s <- Ft.c.calc$Ft.c.unc.1s
 
 #### Calculate RFT and uncertainty ----
-Rft.calc <- data.frame(Run = he_data_rc$Run, 
-                        Sample = he_data_rc$Sample.Name.and.Aliquot, 
-                        U = he_data_rc$U..ng...i.,
-                        sUf = he_data_rc$X...h..1/he_data_rc$U..ng...i., # fractional uncertainty
-                        Th = he_data_rc$Th..ng...j.,
-                        sThf = he_data_rc$X...h..2/he_data_rc$Th..ng...j., # fractional uncertainty
-                        Th.U = he_data_rc$Th..ng...j./he_data_rc$U..ng...i.,
+Rft.calc <- data.frame(Run = he_data_rc$Laser_Session, 
+                        Sample = he_data_rc$Grain, 
+                        U = he_data_rc$U,
+                        sUf = he_data_rc$X._1σ.1/he_data_rc$U, # fractional uncertainty
+                        Th = he_data_rc$Th,
+                        sThf = he_data_rc$X._1σ.2/he_data_rc$Th, # fractional uncertainty
+                        Th.U = he_data_rc$Th/he_data_rc$U,
                         Ft.c = he_data_rc$Ft.c,
-                        Ft.c.unc = he_data_rc$Ft.c.unc.2s/2)
+                        Ft.c.unc = he_data_rc$Ft.c.unc.1s)
 Rft.calc <- Rft.calc %>%
   mutate(sTh.U.f = sqrt(sThf^2 + sUf^2)) %>%
   mutate(A238 = (1.04 + 0.247*Th.U)^(-1)) %>%
@@ -397,23 +424,18 @@ he_data_rc$R.ft.unc <- Rft.calc$R.ft.unc
 
 #### hecalc input table ----
 hecalc_table <- he_data_rc %>%
-  mutate(Sample = paste(as.character(Run), Sample.Name.and.Aliquot, sep = "_")) %>%
-  mutate(X147Sm..ng...k. = case_when(X147Sm..ng...k. == "n.m." ~ 0, # Sm concentration in ppm (n.m. converted to zeros for ease of data manipulation)
-                                     he_data_rc$X147Sm..ng...k. == "0" ~ 0,
-                                     .default = as.numeric(X147Sm..ng...k.))) %>%
-  mutate(X...h..3 = case_when(X...h..3 == "n.m." ~ 0, # Sm concentration in ppm (n.m. converted to zeros for ease of data manipulation)
-                              X...h..3 == "0" ~ 0,
-                              .default = as.numeric(X...h..3))) %>%
-  select(Sample, X4He..fmol...g., X...h., U..ng...i., X...h..1, Th..ng...j., X...h..2, X147Sm..ng...k.,
-         X...h..3, Ft.U238, Ft.U238.unc, Ft.U235, Ft.U235.unc, Ft.Th232, Ft.Th232.unc, Ft.Sm147, Ft.Sm147.unc) %>%
-  mutate(He.mol = 10^(-15)*X4He..fmol...g., .after = X...h.) %>%
-  mutate(He.mol.unc = 10^(-15)*X...h., .after = He.mol) %>%
-  mutate(mol.238 = (U..ng...i.*10^(-9)/238), .before = Th..ng...j.) %>%
-  mutate(mol.238.unc = (X...h..1*10^(-9)/238), .before = Th..ng...j.) %>%
-  mutate(mol.232 = (Th..ng...j.*10^(-9)/232), .before = X147Sm..ng...k.) %>%
-  mutate(mol.232.unc = (X...h..2*10^(-9)/232), .before = X147Sm..ng...k.) %>%
-  mutate(mol.147 = as.numeric(X147Sm..ng...k.)*10^(-9)/147, .before = Ft.U238) %>%
-  mutate(mol.147.unx = as.numeric(X...h..3)*10^(-9)/147, .before = Ft.U238)
+  mutate(Sample = paste(as.character(Laser_Session), Grain, sep = "_")) %>%
+  select(Sample, X4He, X._1σ, U, X._1σ.1, Th, X._1σ.2, X147Sm, X._1σ.3, 
+         Ft.U238, Ft.U238.unc, Ft.U235, Ft.U235.unc, Ft.Th232, Ft.Th232.unc, 
+         Ft.Sm147, Ft.Sm147.unc) %>%
+  mutate(He.mol = 10^(-15)*X4He, .after = X._1σ) %>%
+  mutate(He.mol.unc = 10^(-15)*X._1σ, .after = He.mol) %>%
+  mutate(mol.238 = (U*10^(-9)/238), .before = Th) %>%
+  mutate(mol.238.unc = (X._1σ.1*10^(-9)/238), .before = Th) %>%
+  mutate(mol.232 = (Th*10^(-9)/232), .before = X147Sm) %>%
+  mutate(mol.232.unc = (X._1σ.2*10^(-9)/232), .before = X147Sm) %>%
+  mutate(mol.147 = (X147Sm*10^(-9)/147), .before = Ft.U238) %>%
+  mutate(mol.147.unc = (X._1σ.3*10^(-9)/147), .before = Ft.U238)
 hecalc_header <- c("Sample", "fmol 4He", "±", "mol 4He", "±",
                    "ng 238U", "±", "mol 238U", "±","ng 232Th", "±", "mol 232Th", "±",
                    "ng 147Sm", "±", "mol 147Sm", "±",
