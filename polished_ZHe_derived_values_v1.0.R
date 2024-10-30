@@ -1,5 +1,5 @@
 #### Derived Intermediate Zircon (U-Th)/He values for polished grains
-## B. Peak October 21, 2024
+## B. Peak October 30, 2024
 
 # PURPOSE: This R script calculates volume, surface area, and related values for Ft corrections and eU calculation for 
   # polished partial zircon grains using standard 2D grain measurements.
@@ -7,24 +7,8 @@
 # Ft equations from Cooperdock et al. (2019)
 # Volume, Rft, and Ft uncertainties applied following recommendations in Zeigler et al. (2024) where applicable
 
-# INPUTS: standard CU TraIL data sheet as an .xlsx file with the addition of 7 columns labeled as follows:
-  # Laser Session: index for corresponding in-situ U-Pb data collection if applicable, if NA, fill with numeric 1
-  # Grind Depth: the depth removed from the grains by polishing, can be estimated with glass beads or other
-    # object of known size polished alongside the grains
-  # Geometry: numeric grain geometry index:
-            # 1 = ellipsoid
-            # 2 = cylindrical
-            # 3 = tetragonal/orthorhombic
-            # 4 = hexagonal (unsupported)
-  # Orientation: orientation of the grain polished surface relative to the crystal c-axis:
-            # 1 = polished perpendicular to c-axis
-            # 2 = polished parallel to c-axis
-  # Length Polished Face: the long side of polished face of the grain. Only needed
-        # for ellipsoids polished less than halfway, enter 0 when not applicable.
-  # Width Polished Face: the short side of polished face of the grain. Only needed
-        # for ellipsoids polished less than halfway, enter 0 when not applicable.
-  # Crystal Fragment? : indicates if crystal measured grain is an interior fragment or not.
-# Note that these and other column names are referenced throughout the script and should not be changed
+# INPUTS: .xlsx file with required headers, see example. Input file may have additional columns.
+# Note that required column names are referenced throughout the script and should not be changed
 
 # OUTPUTS: default outputs are two .xlsx files:
     # 1. Full data sheet with all derived values and original measurements, analytical measurements 
@@ -44,7 +28,7 @@ library(tidyverse) # for manipulating datatables
 #### Import data and set as numeric values ----
 setwd("~/Desktop") # set working directory. This is where output files will be saved
 # he_data <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
-he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/Code/Github/polished-ZHe-derived-values/example_input_file.xlsx",
+he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/grain_polishing/sample_data_volume.xlsx",
                   startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
 # the next two lines clean the data table to remove the unit header and footnotes
 cut_index <- which(is.na(he_data_import$Grain), arr.ind = TRUE)
@@ -110,7 +94,7 @@ for(i in 1:as.numeric(nrow(he_data))){
       ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Sm147/he_data$Rsv.Ellipse[i])^3 # 147Sm Ft value
     
     # Cylinder
-    h <- (he_data$Length_2[i] + he_data$Width_1[i])/2 # original height is average of 2 lengths + g
+    h <- (he_data$Length_1[i] + he_data$Length_2[i])/2 # original height is average of 2 lengths + g
     r <- (he_data$Width_1[i] + he_data$Width_2[i])/4 # radius is average of 2 widths divided by 2
     
     he_data$Vol.Cyl[i] <- pi*r^2*h
@@ -161,11 +145,11 @@ for(i in 1:as.numeric(nrow(he_data))){
       ((1/16) + 0.1686*(1 - a.e/he_data$Rsv.Ellipse[i])^2)*(SD.Sm147/he_data$Rsv.Ellipse[i])^3 # 147Sm Ft value
     } else if(g < (he_data$Width_2[i] + g)/2){ # ground less than halfway
       a.e <- he_data$Width_1[i]/2
-      b.e <- he_data$Width_2[i]
+      b.e <- (he_data$Width_2[i] + g)/2
       c.e <- (he_data$Length_1[i] + he_data$Length_2[i])/4
-      a.p <- he_data$Width_Polished_Face[i]/2
+      a.p <- he_data$Width_P[i]/2
       b.p <- g
-      c.p <- he_data$Length_Polished_Face[i]/2
+      c.p <- he_data$Length_P[i]/2
       he_data$Vol.Ellipse[i] <- (4/3)*pi*a.e*b.e*c.e - (2/3)*pi*a.p*b.p*c.p
       he_data$SA.Ellipse[i] <-  4*pi*((a.e^p*b.e^p + a.e^p*c.e^p + b.e^p*c.e^p)/3)^(1/p) -
         2*pi*((a.p^p*b.p^p + a.p^p*c.p^p + b.p^p*c.p^p)/3)^(1/p)
