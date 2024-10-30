@@ -252,7 +252,7 @@ he_data$Vol.Cyl.Unc <- vu.c*he_data$Vol.Cyl # cylindrical volume uncertainty
 # clean table of recalculated derived values
 he_data_rc <- he_data %>%
   select(Laser_Session, Grain, Length_1, Width_1, Length_2, Width_2, Geometry, Np,
-         Length_Polished_Face, Width_Polished_Face, Grind_Depth, Orientation, Crystal_Fragment.,
+         Length_P, Width_P, Grind_Depth, Orientation, Crystal_Fragment.,
          X4He, X._1σ, U, X._1σ.1, Th, X._1σ.2, X147Sm, X._1σ.3)
 
 # set up value columns
