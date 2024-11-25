@@ -16,7 +16,7 @@
     # 2. Sheet formatted for use with the HeCalc python program for calculating (U-Th)/He dates and
       # uncertainty (Martin et al., 2022, 2023)
 
-# Output file names can be changed at the end of the script.
+# Output file names set at the beginning of the script.
 
 # -------------------------------------------------------------------------------------------------------------
 
