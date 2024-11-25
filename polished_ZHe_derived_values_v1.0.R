@@ -21,15 +21,20 @@
 # -------------------------------------------------------------------------------------------------------------
 
 #### Load necessary packages ----
+# these packages must be installed prior to running the script
 library(openxlsx) # read in and export microsoft excel files
 library(dplyr) # easier data manipulation
 library(tidyverse) # for manipulating datatables
 
-#### Import data and set as numeric values ----
+#### Import data  and settings for output files ----
 setwd("~/Desktop") # set working directory. This is where output files will be saved
+filename_root <- "test_2024_11_24" # root of filename to be saved. e.g. "Sample_1"
+
 # he_data <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
-he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/grain_polishing/sample_data_volume.xlsx",
+he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/Code/GitHub/polished-ZHe-derived-values/example_input_file.xlsx",
                   startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
+
+#### Clean data ----
 # the next two lines clean the data table to remove the unit header and footnotes
 cut_index <- which(is.na(he_data_import$Grain), arr.ind = TRUE)
 he_data <- he_data_import[-cut_index, ]
@@ -251,7 +256,7 @@ he_data$Vol.Cyl.Unc <- vu.c*he_data$Vol.Cyl # cylindrical volume uncertainty
 
 # clean table of recalculated derived values
 he_data_rc <- he_data %>%
-  select(Laser_Session, Grain, Length_1, Width_1, Length_2, Width_2, Geometry, Np,
+  select(Analysis_Session, Grain, Length_1, Width_1, Length_2, Width_2, Geometry, Np,
          Length_P, Width_P, Grind_Depth, Orientation, Crystal_Fragment.,
          X4He, X._1σ, U, X._1σ.1, Th, X._1σ.2, X147Sm, X._1σ.3)
 
@@ -338,7 +343,7 @@ he_data_rc$eU.ppm <- he_data_rc$U.ppm + 0.238*he_data_rc$Th.ppm + 0.0083*he_data
 he_data_rc$eU.ppm.unc <- sqrt(he_data_rc$U.ppm.unc^2 + (0.238)*he_data_rc$Th.ppm.unc^2 + (0.0083)*he_data_rc$Sm.ppm.unc^2)
 
 #### Calculate combined Ft and uncertainty ----
-Ft.c.calc <- data.frame(Run = he_data_rc$Laser_Session, 
+Ft.c.calc <- data.frame(Run = he_data_rc$Analysis_Session, 
                         Sample = he_data_rc$Grain, 
                         U = he_data_rc$U,
                         sUf = he_data_rc$X._1σ.1/he_data_rc$U, # fractional uncertainty
@@ -373,7 +378,7 @@ he_data_rc$Ft.c <- Ft.c.calc$Ft.c
 he_data_rc$Ft.c.unc.1s <- Ft.c.calc$Ft.c.unc.1s
 
 #### Calculate RFT and uncertainty ----
-Rft.calc <- data.frame(Run = he_data_rc$Laser_Session, 
+Rft.calc <- data.frame(Run = he_data_rc$Analysis_Session, 
                         Sample = he_data_rc$Grain, 
                         U = he_data_rc$U,
                         sUf = he_data_rc$X._1σ.1/he_data_rc$U, # fractional uncertainty
@@ -405,10 +410,43 @@ Rft.calc <- Rft.calc %>%
 he_data_rc$R.ft <- Rft.calc$R.ft
 he_data_rc$R.ft.unc <- Rft.calc$R.ft.unc
 
+#### Format full data table for export ----
+all_data_header <- c("Analysis Session", "Grain", "Length 1", "Width 1", "Length 2", "Width 2", "Geometry", "Np", "Length P", "Width P", "Grind Depth", "Orientation",
+"Crystal Fragment?", "4He", "± 1σ", "U", "± 1σ", "Th", "± 1σ", "147Sm", "± 1σ",
+"Volume", "± 1σ", "Mass", "± 1σ","4He", "± 1σ", "U", "± 1σ", "Th", "± 1σ", "147Sm", "± 1σ", "eU", "± 1σ", "RSV", "± 1σ", 
+"FT238", "± 1σ", "FT235", "± 1σ", "FT232", "± 1σ", "FT147", "± 1σ",  "Combined FT", "± 1σ", "RFT", "± 1σ")
+
+unit_row <- data.frame("Analysis_Session" = "", "Grain" = "", "Length_1" = "(µm)", "Width_1" = "(µm)", "Length_2" = "(µm)",
+                       "Width_2" = "(µm)", "Geometry" = "", "Np" = "", "Length_P" = "(µm)", "Width_P" = "(µm)", "Grind_Depth" = "(µm)", 
+                       "Orientation" = "", "Crystal_Fragment." = "", "X4He" = "(fmol)",
+                       "X._1σ" = "(fmol)", "U" = "(ng)", "X._1σ.1" = "(ng)", "Th" = "(ng)", "X._1σ.2" = "(ng)", "X147Sm" = "(ng)", "X._1σ.3" = "(ng)",
+                       "Volume" = "(µm3)", "Volume.unc" = "(µm3)", "Rsv" = "(µm)", "Rsv.unc" = "(µm)", "Ft.U238" = "", "Ft.U238.unc" = "", 
+                       "Ft.U235" = "", "Ft.U235.unc" = "", "Ft.Th232" = "", "Ft.Th232.unc" = "", "Ft.Sm147" = "", "Ft.Sm147.unc" = "",
+                       "Mass" = "(g)", "Mass.unc" = "(g)", "He.nmol.g" = "(nmol/g)", "He.nmol.g.unc" = "(nmol/g)", "U.ppm" = "(ppm)",
+                       "U.ppm.unc" = "(ppm)", "Th.ppm" = "(ppm)", "Th.ppm.unc" = "(ppm)", "Sm.ppm" = "(ppm)", "Sm.ppm.unc" = "(ppm)",
+                       "eU.ppm" = "(ppm)", "eU.ppm.unc" = "(ppm", "Ft.c" = "", "Ft.c.unc.1s" = "", "R.ft" = "(µm)", "R.ft.unc" = "(µm)")
+
+all_vals <- rbind(unit_row, he_data_rc) %>%
+  relocate(Mass, .after = Volume.unc) %>%
+  relocate(Mass.unc, .after = Mass) %>%
+  relocate(He.nmol.g, .after = Mass.unc) %>%
+  relocate(He.nmol.g.unc, .after = He.nmol.g) %>%
+  relocate(U.ppm, .after = He.nmol.g.unc) %>%
+  relocate(U.ppm.unc, .after = U.ppm) %>%
+  relocate(Th.ppm, .after = U.ppm.unc) %>%
+  relocate(Th.ppm.unc, .after = Th.ppm) %>%
+  relocate(Sm.ppm, .after = Th.ppm.unc) %>%
+  relocate(Sm.ppm.unc, .after = Sm.ppm) %>%
+  relocate(eU.ppm, .after = Sm.ppm.unc) %>%
+  relocate(eU.ppm.unc, .after = eU.ppm)
+
+colnames(all_vals) <- all_data_header
+
+
 
 #### hecalc input table ----
 hecalc_table <- he_data_rc %>%
-  mutate(Sample = paste(as.character(Laser_Session), Grain, sep = "_")) %>%
+  mutate(Sample = paste(as.character(Analysis_Session), Grain, sep = "_")) %>%
   select(Sample, X4He, X._1σ, U, X._1σ.1, Th, X._1σ.2, X147Sm, X._1σ.3, 
          Ft.U238, Ft.U238.unc, Ft.U235, Ft.U235.unc, Ft.Th232, Ft.Th232.unc, 
          Ft.Sm147, Ft.Sm147.unc) %>%
@@ -427,5 +465,5 @@ hecalc_header <- c("Sample", "fmol 4He", "±", "mol 4He", "±",
 colnames(hecalc_table) <- hecalc_header
 
 ### Save data as microsoft excel files ----
-write.xlsx(he_data_rc, "all_recalculated_values.xlsx")
-write.xlsx(hecalc_table, "helcalc_input_file.xlsx")
+write.xlsx(all_vals, paste(filename_root, "all_values.xlsx", sep = ""))
+write.xlsx(hecalc_table, paste(filename_root, "helcalc_input_file.xlsx", sep = ""))
