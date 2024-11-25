@@ -15,3 +15,5 @@ OUTPUTS: default outputs are two .xlsx files:
 2. Sheet formatted for use with the HeCalc python program for calculating (U-Th)/He dates and uncertainty (Martin et al., 2022, 2023)
 
 Output file names can be changed at the beginning of the script.
+
+DOI: 10.5281/zenodo.14219282
