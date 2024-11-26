@@ -16,4 +16,4 @@ OUTPUTS: default outputs are two .xlsx files:
 
 Output file names can be changed at the beginning of the script.
 
-DOI: 10.5281/zenodo.14219282
+<a href="https://doi.org/10.5281/zenodo.14219282"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.14219282.svg" alt="DOI"></a>
