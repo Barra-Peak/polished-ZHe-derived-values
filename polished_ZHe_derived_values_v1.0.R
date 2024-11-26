@@ -30,9 +30,9 @@ library(tidyverse) # for manipulating datatables
 setwd("~/Desktop") # set working directory. This is where output files will be saved
 filename_root <- "test_2024_11_24" # root of filename to be saved. e.g. "Sample_1"
 
-# he_data <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
-he_data_import <- read.xlsx("/Users/barrapeak/Dropbox/Code/GitHub/polished-ZHe-derived-values/example_input_file.xlsx",
-                  startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
+he_data <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
+# he_data_import <- read.xlsx("/Filepath/example_input_file.xlsx",
+#                   startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
 
 #### Clean data ----
 # the next two lines clean the data table to remove the unit header and footnotes
