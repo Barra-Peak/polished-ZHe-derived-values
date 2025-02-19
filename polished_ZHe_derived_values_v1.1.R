@@ -28,9 +28,9 @@ library(tidyverse) # for manipulating datatables
 
 #### Import data  and settings for output files ----
 setwd("~/Desktop") # set working directory. This is where output files will be saved
-filename_root <- "jacobsville_rerun_2025_02_19" # root of filename to be saved. e.g. "Sample_1"
+filename_root <- "test_2025_02_19" # root of filename to be saved. e.g. "Sample_1"
 
-he_data_import <- read.xlsx(file.choose(), startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
+he_data_import <- read.xlsx(file.choose(), startRow = 1, colNames = TRUE, check.names = TRUE, sep.names = "_") # interactive popup file picker
 # startRow tells R what row data starts on, if there is no table title, set to 2
 # he_data_import <- read.xlsx("/Filepath/example_input_file.xlsx",
 #                   startRow = 2, colNames = TRUE, check.names = TRUE, sep.names = "_") #load data using full file path
@@ -265,75 +265,6 @@ for(i in 1:as.numeric(nrow(he_data))){
   }
 }
 
-# #### TEST ----
-# he_data <- filter(he_data, Geometry == 2)
-# for(i in 1:as.numeric(nrow(he_data))){
-#   g <- he_data$Grind_Depth[i] # depth of amount removed through polishing
-#   if(he_data$Orientation[i] == 1){ # polished perpendicular to c-axis
-#     # Cylinder
-#     h <- (he_data$Length_1[i] + he_data$Length_2[i])/2 # original height is average of 2 lengths + g
-#     r <- (he_data$Width_1[i] + he_data$Width_2[i])/4 # radius is average of 2 widths divided by 2
-#     
-#     he_data$Vol.Cyl[i] <- pi*r^2*h
-#     he_data$SA.Cyl[i] <- (2*pi*r*h) + (pi*r^2) # one end is polished so don't count
-#     he_data$Rsv.Cyl[i] <- 3*he_data$Vol.Cyl[i]/he_data$SA.Cyl[i]
-#     he_data$Ft_238U.c[i] <- 1 - (1/2)*((r+h)*SD.U238/(r*h)) + 0.2122*(SD.U238^2)/(r*h) + 0.0153*(SD.U238^3/r^3) # 238U Ft value
-#     he_data$Ft_235U.c[i] <- 1 - (1/2)*((r+h)*SD.U235/(r*h)) + 0.2122*(SD.U235^2)/(r*h) + 0.0153*(SD.U235^3/r^3) # 235U Ft value
-#     he_data$Ft_232Th.c[i] <- 1 - (1/2)*((r+h)*SD.Th232/(r*h)) + 0.2122*(SD.Th232^2)/(r*h) + 0.0153*(SD.Th232^3/r^3) # 232Th Ft value
-#     he_data$Ft_147Sm.c[i] <- 1 - (1/2)*((r+h)*SD.Sm147/(r*h)) + 0.2122*(SD.Sm147^2)/(r*h) + 0.0153*(SD.Sm147^3/r^3) # 147Sm Ft value
-#     
-#   }else{ # polished parallel to c-axis
-#     # Cylinder
-#     r_ideal <- (g + he_data$Width_2[i])/2
-#     h <- (he_data$Length_1[i] + he_data$Length_2[i])/2
-#     if(r_ideal < g){ # ground more than halfway
-#       a = he_data$Width_2[i]
-#       b = sqrt(r_ideal^2 - (r_ideal-g)^2)
-#       k = ((a-b)^2)/((a+b))^2
-#       he_data$Vol.Cyl[i] <- (pi/2)*a*b*h
-#       he_data$SA.Cyl[i] <- (pi*a*b) + (((pi*(a + b))/2)*h*(1 + ((3*k)/(10 + sqrt(4-3*k)))))
-#       he_data$Rsv.Cyl[i] <- 3*he_data$Vol.Cyl[i]/he_data$SA.Cyl[i]
-#       he_data$Ft_238U.c[i] <- 1 - (3/4)*(SD.U238/he_data$Rsv.Cyl[i]) + # 238U Ft value
-#         ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.U238/he_data$Rsv.Cyl[i])^2 +
-#         ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.U238/he_data$Rsv.Cyl[i])^3
-#       he_data$Ft_235U.c[i] <- 1 - (3/4)*(SD.U235/he_data$Rsv.Cyl[i]) + # 235U Ft value
-#         ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.U235/he_data$Rsv.Cyl[i])^2 +
-#         ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.U235/he_data$Rsv.Cyl[i])^3
-#       he_data$Ft_232Th.c[i] <- 1 - (3/4)*(SD.Th232/he_data$Rsv.Cyl[i]) + # 232Th Ft value
-#         ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.Th232/he_data$Rsv.Cyl[i])^2 +
-#         ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.Th232/he_data$Rsv.Cyl[i])^3
-#       he_data$Ft_147Sm.c[i] <- 1 - (3/4)*(SD.Sm147/he_data$Rsv.Cyl[i]) + # 147Sm Ft value
-#         ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.Sm147/he_data$Rsv.Cyl[i])^2 +
-#         ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.Sm147/he_data$Rsv.Cyl[i])^3
-#       
-#       
-#       } else if(r_ideal > g){# ground less than halfway
-#         a <- g
-#         b <- sqrt(r_ideal^2 - (r_ideal - g)^2)
-#         k <- ((a-b)^2)/((a+b))^2
-#         he_data$Vol.Cyl[i] <- (pi*r_ideal^2 - ((pi/2)*a*b))*h
-#         he_data$SA.Cyl[i] <-  2*(pi*r_ideal^2 - ((pi/2)*a*b)) +
-#           h*((2*pi*r_ideal) - ((pi*(a+b)/2)*(1 + ((3*k)/(10 + sqrt(4-(3*k)))))))
-#         he_data$Rsv.Cyl[i] <- 3*he_data$Vol.Cyl[i]/he_data$SA.Cyl[i]
-#         he_data$Ft_238U.c[i] <- 1 - (3/4)*(SD.U238/he_data$Rsv.Cyl[i]) + # 238U Ft value
-#           ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.U238/he_data$Rsv.Cyl[i])^2 +
-#           ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.U238/he_data$Rsv.Cyl[i])^3
-#         he_data$Ft_235U.c[i] <- 1 - (3/4)*(SD.U235/he_data$Rsv.Cyl[i]) + # 235U Ft value
-#           ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.U235/he_data$Rsv.Cyl[i])^2 +
-#           ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.U235/he_data$Rsv.Cyl[i])^3
-#         he_data$Ft_232Th.c[i] <- 1 - (3/4)*(SD.Th232/he_data$Rsv.Cyl[i]) + # 232Th Ft value
-#           ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.Th232/he_data$Rsv.Cyl[i])^2 +
-#           ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.Th232/he_data$Rsv.Cyl[i])^3
-#         he_data$Ft_147Sm.c[i] <- 1 - (3/4)*(SD.Sm147/he_data$Rsv.Cyl[i]) + # 147Sm Ft value
-#           ((3/2)*0.2112*he_data$Rsv.Cyl[i])/(h + (((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i]))))*(SD.Sm147/he_data$Rsv.Cyl[i])^2 +
-#           ((0.0153*he_data$Rsv.Cyl[i])/(((2/3)*he_data$Rsv.Cyl[i]*h)/(h - ((2/3)*he_data$Rsv.Cyl[i])))^3)*(SD.Sm147/he_data$Rsv.Cyl[i])^3
-#         
-#       }
-#   }
-# }
-
-  
-  
 #### Calculate uncertainties ----
 vu.e <- 0.21 # volume uncertainty percentage for ellipsoidal grains from Zeigler et al. 2024
 vu.o <- 0.13 # volume uncertainty percentage for tetragonal grains from Zeigler et al. 2024
@@ -556,3 +487,4 @@ colnames(hecalc_table) <- hecalc_header
 ### Save data as microsoft excel files ----
 write.xlsx(all_vals, paste(filename_root, "all_values.xlsx", sep = ""))
 write.xlsx(hecalc_table, paste(filename_root, "helcalc_input_file.xlsx", sep = ""))
+
