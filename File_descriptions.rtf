@@ -1,0 +1,47 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2761
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red255\green255\blue255;\red0\green0\blue0;\red37\green90\blue150;
+\red242\green242\blue242;}
+{\*\expandedcolortbl;;\cssrgb\c100000\c100000\c100000;\cssrgb\c0\c0\c0;\cssrgb\c18431\c43529\c65490;
+\cssrgb\c96078\c96078\c96078;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 File Descriptions\
+\
+All files required to produce plots in Peak (2025) Geochronology.\
+\
+.R Files:\
+\
+<polished_ZHe_derived_values_v1.1.R> Script to calculate values presented and discussed in Peak et al. (2024, \cb2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 https://doi.org/10.5194/gchron-2024-33\cb1 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 ). Available long term in repository {\field{\*\fldinst{HYPERLINK "https://doi.org/10.5281/zenodo.14908310"}}{\fldrslt \cf4 \cb5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec4 https://doi.org/10.5281/zenodo.14908310}}\cf4 \cb5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec4 .\cf0 \cb1 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 <polished_ZHe_derived_values_v2.R> Script to calculate values presented and discussed in Peak et al. (2025). Available as static version in repository. Github version may include future updates.\
+\
+<FT_comparison_plots.R> Script to generate synthetic dataset and all plots presented in Peak et al. (2025). Plot titles and annotations modified from R output in Adobe Illustrator prior to publication.\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 .xlsx Files:\
+\
+<initial_synthetic.xlsx> Initial input file for creating synthetic zircon dataset. Contains column names in correct order and synthetic isotope measurements in ng.\
+\
+<synthetic_zircon.xlsx> Synthetic zircon dataset created using <FT_comparison_plots.R>. Can be directly loaded into <> to apply the new protocol for derived data calculation.\
+\
+<synthetic_zircon_new_protocol.xlsx> Output from <> applying new protocol to synthetic zircon dataset. Includes all derived data values.\
+\
+<synthetic_zircon_g0.xlsx> Synthetic zircon dataset created using <FT_comparison_plots.R> with grinding depth set to 0 for all grains. Used to calculate FT using Ketcham et al. (2011) protocol by loading into <>.\
+\
+<synthetic_zircon_ketcham_protocol.xlsx> Output from <> applying Ketcham et al. (2011) protocol to synthetic zircon dataset. Includes all derived data values.\
+\
+<real_dataset.xlsx> Real zircon dataset. Can be directly loaded into <> to apply the new protocol for derived data calculation.\
+\
+<real_data_new_protocol.xlsx> Output from <> applying new protocol to real zircon dataset. Includes all derived data values.\
+\
+<real_dataset_g0.xlsx> Real zircon dataset with grinding depth set to 0 for all grains. Used to calculate FT using Ketcham et al. (2011) protocol by loading into <>.\
+\
+<real_data_ketcham_protocol.xlsx> Output from <> applying Ketcham et al. (2011) protocol to real zircon dataset. Includes all derived data values.\
+\
+<example_input_file.xlsx> Example formatting for data table to run with <polished_ZHe_derived_values.R> (all versions)}
