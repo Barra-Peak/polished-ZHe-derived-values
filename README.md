@@ -18,9 +18,9 @@ Output file names can be changed at the beginning of the script.
 <a href="https://doi.org/10.5281/zenodo.15642289"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.15642289.svg" alt="DOI"></a>
 
 References:
-Cooperdock, E. H. G., Ketcham, R. A., and Stockli, D. F.: Resolving the effects of 2-D versus 3-D grain measurements on apatite (U-Th)ĝ/ĝHe age data and reproducibility, Geochronology, 1, 17–41, https://doi.org/10.5194/gchron-1-17-2019, 2019.![image](https://github.com/user-attachments/assets/d079d31d-b884-484f-9322-4f0e764272d1)
+Cooperdock, E. H. G., Ketcham, R. A., and Stockli, D. F.: Resolving the effects of 2-D versus 3-D grain measurements on apatite (U-Th)ĝ/ĝHe age data and reproducibility, Geochronology, 1, 17–41, https://doi.org/10.5194/gchron-1-17-2019, 2019.
 
-Ketcham, R. A., Gautheron, C., and Tassan-Got, L.: Accounting for long alpha-particle stopping distances in (U–Th–Sm)/He geochronology: Refinement of the baseline case, Geochim. Cosmochim. Acta, 75, 7779–7791, https://doi.org/10.1016/j.gca.2011.10.011, 2011.![image](https://github.com/user-attachments/assets/f0669ea1-4006-4806-af3d-0a3d9f1c61ea)
+Ketcham, R. A., Gautheron, C., and Tassan-Got, L.: Accounting for long alpha-particle stopping distances in (U–Th–Sm)/He geochronology: Refinement of the baseline case, Geochim. Cosmochim. Acta, 75, 7779–7791, https://doi.org/10.1016/j.gca.2011.10.011, 2011.
 
 Martin, P.: HeCalc (1.0.1), Zenodo, https://doi.org/10.5281/zenodo.7453426, 2022. 
 
