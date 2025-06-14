@@ -223,9 +223,17 @@ all_data_comp <- all_synthetic_data %>%
   mutate(Orientation.fac = case_when(Orientation == 1 ~ "Perpendicular",
                                      .default = "Parallel"))
 
+# remove grains with whole grain FT < 0.5
+FT.lt.0.5 <- all_data_comp[which(all_data_comp$Syn.FT < 0.5 & all_data_comp$Ground == "None"), ] %>%
+  select(c("Analysis.Session", "Shape", "Size", "Aspect.Ratio", "W.Ratio", "Orientation.Name", "Geometry", "Np", "Ground"))
+all_data_comp <- left_join(all_data_comp, FT.lt.0.5, by = c("Analysis.Session", "Shape", "Size", "Aspect.Ratio", "W.Ratio", "Orientation.Name", "Geometry", "Np")) %>%
+  mutate(FT_whole = case_when(is.na(Ground.y) == T ~ "> 0.5",
+                              .default = "< 0.5"))
+
 ## Plot percent difference combined FT vs grind depth for synthetic data ----
 # Maximum symmetry case
 syn.diffFt.g1 <- all_data_comp %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(W.Ratio == 1) %>%
   filter(Aspect.Ratio == 1) %>%
   filter(Volume.x > 0) %>%
@@ -267,9 +275,11 @@ ggsave("/Users/barrapeak/Desktop/Synthetic.FT.Max.Symmetry.pdf", syn.diffFt.g1, 
 
 # Minimum symmetry
 syn.diffFt.g2 <- all_data_comp %>%
-  filter(W.Ratio == 0.5) %>%
-  filter(Aspect.Ratio == 0.3) %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(Volume.x > 0) %>%
+  group_by(Shape, Size) %>%
+  filter(W.Ratio == min(W.Ratio)) %>%
+  filter(Aspect.Ratio == min(Aspect.Ratio)) %>%
   ggplot(aes(x = Grind.Depth.x, y = Syn.Diff.From.Whole, group = interaction(Size, as.factor(Aspect.Ratio)), shape = as.factor(Shape), color = Size)) +
   geom_hline(yintercept = 0, linetype = "dotted", linewidth = 0.5, color = "gray") +
   geom_line(linetype = "dashed") +
@@ -287,7 +297,7 @@ syn.diffFt.g2 <- all_data_comp %>%
   scale_x_continuous(limits = c(0, 150), breaks = seq(0, 150, 20))+
   xlab("Grinding Depth (um)") +
   ylab("% Difference FT from whole grain") + 
-  ggtitle(paste("FT Difference from Whole Grain ((Syn.FT/Syn.FT0)-1)*100)", paste("Width Ratio = 0.5", sep = " "), sep = "\n")) +
+  ggtitle(paste("FT Difference from Whole Grain ((Syn.FT/Syn.FT0)-1)*100)", paste("W/A Ratio = Min", sep = " "), sep = "\n")) +
   theme(panel.background = element_rect(fill = "transparent", colour = "transparent", linewidth = 1),
         panel.border = element_rect(fill = NA, color = "black", linewidth = 1),
         axis.ticks = element_line(colour = "black", linewidth = 0.5),
@@ -312,21 +322,22 @@ ggsave("/Users/barrapeak/Desktop/Synthetic.FT.Min.Symmetry.pdf", syn.diffFt.g2, 
 # Comparison between new protocol and Ketcham et al. (2011) protocol
 # Maximum symmetry case
 K.comparison.plot.1 <- all_data_comp %>%
-  filter(Ground != "None") %>%
-  filter(W.Ratio == 1) %>%
+  #filter(Ground != "None") %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(Volume.x > 0) %>%
   filter(Volume.y > 0) %>%
+  filter(W.Ratio == 1) %>%
   filter(Aspect.Ratio == 1) %>%
   ggplot(aes(x = NC.FT, y = Syn.FT, color = Size, xmin = NC.FT - NC.FT.Unc,
              xmax = NC.FT + NC.FT.Unc, ymin = Syn.FT - Syn.FT.Unc,
-             ymax = Syn.FT + Syn.FT.Unc, label = Ground)) +
+             ymax = Syn.FT + Syn.FT.Unc, label = Ground.x)) +
   geom_abline(intercept = 0, slope = 1) +
   geom_hline(yintercept = 0.5) +
   geom_vline(xintercept = 0.5) +
   geom_errorbar(width = 0) +
   geom_errorbarh(width = 0) +
   geom_point(size = 1) +
-  geom_text(aes(label = Ground, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
+  geom_text(aes(label = Ground.x, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
   scale_color_manual(values = size_color) +
   coord_cartesian(
     xlim = c(0,1),
@@ -361,21 +372,23 @@ ggsave("/Users/barrapeak/Desktop/Ketcham.1to1.Comp.Max.Symmetry.pdf", K.comparis
 # Comparison between new protocol and Ketcham et al. (2011) protocol
 # Minimum symmetry case
 K.comparison.plot.2 <- all_data_comp %>%
-  filter(Ground != "None") %>%
-  filter(W.Ratio == 0.5) %>%
+  #filter(Ground != "None") %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(Volume.x > 0) %>%
   filter(Volume.y > 0) %>%
-  filter(Aspect.Ratio == 0.3) %>%
+  group_by(Shape, Size) %>%
+  filter(W.Ratio == min(W.Ratio)) %>%
+  filter(Aspect.Ratio == min(Aspect.Ratio)) %>%
   ggplot(aes(x = NC.FT, y = Syn.FT, color = Size, xmin = NC.FT - NC.FT.Unc,
              xmax = NC.FT + NC.FT.Unc, ymin = Syn.FT - Syn.FT.Unc,
-             ymax = Syn.FT + Syn.FT.Unc, label = Ground)) +
+             ymax = Syn.FT + Syn.FT.Unc, label = Ground.x)) +
   geom_abline(intercept = 0, slope = 1) +
   geom_hline(yintercept = 0.5) +
   geom_vline(xintercept = 0.5) +
   geom_errorbar(width = 0) +
   geom_errorbarh(width = 0) +
   geom_point(size = 1) +
-  geom_text(aes(label = Ground, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
+  geom_text(aes(label = Ground.x, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
   scale_color_manual(values = size_color) +
   coord_cartesian(
     xlim = c(0,1),
@@ -386,7 +399,7 @@ K.comparison.plot.2 <- all_data_comp %>%
   ) +
   scale_x_continuous(name = "Combined FT, Ketcham", breaks = seq(0, 1, 0.1)) +
   scale_y_continuous(name = "Combined FT, This Study", breaks = seq(0, 1, 0.1)) +
-  ggtitle(paste("This Study vs. Ketcham et al. (2011)", "Width Ratio = 0.5, Aspect Ratio = 0.3", sep = "\n")) +
+  ggtitle(paste("This Study vs. Ketcham et al. (2011)", "Width/Ratio = Min", sep = "\n")) +
   theme(panel.background = element_rect(fill = "transparent", colour = "transparent", linewidth = 1),
         panel.border = element_rect(fill = NA, color = "black", linewidth = 1),
         axis.ticks = element_line(colour = "black", linewidth = 0.5),
@@ -411,19 +424,20 @@ ggsave("/Users/barrapeak/Desktop/Ketcham.1to1.Comp.Min.Symmetry.pdf", K.comparis
 # Maximum symmetry case
 R.comparison.plot.1 <- all_data_comp %>%
   drop_na(Reiners.FT) %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(Volume.x > 0) %>%
-  filter(Ground != "None") %>%
-  filter(W.Ratio == 0.5) %>%
-  filter(Aspect.Ratio == 0.3) %>%
+  filter(Volume.y > 0) %>%
+  filter(W.Ratio == 1) %>%
+  filter(Aspect.Ratio == 1) %>%
   ggplot(aes(x = Reiners.FT, y = Syn.FT, color = Size,
              ymin = Syn.FT - Syn.FT.Unc,
-             ymax = Syn.FT + Syn.FT.Unc, label = Ground)) +
+             ymax = Syn.FT + Syn.FT.Unc, label = Ground.x)) +
   geom_abline(intercept = 0, slope = 1) +
   geom_hline(yintercept = 0.5) +
   geom_vline(xintercept = 0.5) +
   geom_errorbar(width = 0) +
   geom_point(size = 1) +
-  geom_text(aes(label = Ground, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
+  geom_text(aes(label = Ground.x, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
   scale_color_manual(values = size_color) +
   coord_cartesian(
     xlim = c(0,1),
@@ -459,19 +473,21 @@ ggsave("/Users/barrapeak/Desktop/Reiners.1to1.Max.Symmetry.pdf", R.comparison.pl
 # Minimum symmetry case
 R.comparison.plot.2 <- all_data_comp %>%
   drop_na(Reiners.FT) %>%
+  filter(FT_whole == "> 0.5") %>%
   filter(Volume.x > 0) %>%
-  filter(Ground != "None") %>%
-  filter(W.Ratio == 0.5) %>%
-  filter(Aspect.Ratio == 0.3) %>%
+  filter(Volume.y > 0) %>%
+  group_by(Shape, Size) %>%
+  filter(W.Ratio == min(W.Ratio)) %>%
+  filter(Aspect.Ratio == min(Aspect.Ratio)) %>%
   ggplot(aes(x = Reiners.FT, y = Syn.FT, color = Size,
              ymin = Syn.FT - Syn.FT.Unc,
-             ymax = Syn.FT + Syn.FT.Unc, label = Ground)) +
+             ymax = Syn.FT + Syn.FT.Unc, label = Ground.x)) +
   geom_abline(intercept = 0, slope = 1) +
   geom_hline(yintercept = 0.5) +
   geom_vline(xintercept = 0.5) +
   geom_errorbar(width = 0) +
   geom_point(size = 1) +
-  geom_text(aes(label = Ground, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
+  geom_text(aes(label = Ground.x, y = Syn.FT + 0.1), size = 5, size.unit = "pt") +
   scale_color_manual(values = size_color) +
   coord_cartesian(
     xlim = c(0,1),
@@ -482,7 +498,7 @@ R.comparison.plot.2 <- all_data_comp %>%
   ) +
   scale_x_continuous(name = "Combined FT, Reiners", breaks = seq(0, 1, 0.1)) +
   scale_y_continuous(name = "Combined FT, This Study", breaks = seq(0, 1, 0.1)) +
-  ggtitle(paste("This Study vs. No Correction", "Width Ratio = 0.5, Aspect Ratio = 0.3", sep = "\n")) +
+  ggtitle(paste("This Study vs. No Correction", "Width/Aspect Ratio = Min", sep = "\n")) +
   theme(panel.background = element_rect(fill = "transparent", colour = "transparent", linewidth = 1),
         panel.border = element_rect(fill = NA, color = "black", linewidth = 1),
         axis.ticks = element_line(colour = "black", linewidth = 0.5),
